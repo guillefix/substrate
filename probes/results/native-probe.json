@@ -1,0 +1,24 @@
+{
+  "engine": {
+    "backend": "Metal",
+    "device": "0",
+    "device_type": "IntegratedGpu",
+    "driver": "",
+    "driver_info": "",
+    "name": "Apple M3 Max",
+    "vendor": "0"
+  },
+  "objects": 32,
+  "resolution": [
+    640,
+    360
+  ],
+  "frames": 100,
+  "first_frame_ms": 2098.1549579882994,
+  "warm_median_ms": 1.1559995473362505,
+  "warm_p95_ms": 3.4806670155376196,
+  "external_state_changes_pixels": true,
+  "limitations": "Offscreen native GPU drawing plus CPU pixel readback; no live UI, browser, large scene, or VR tested.",
+  "manimgx_version": "0.1.1",
+  "source_review_commit": "b6de21e2032c1178a8560d8bca061496f51b2b53"
+}

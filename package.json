@@ -1,0 +1,14 @@
+{
+  "name": "substrate-neuron-workbench",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "start": "python3 server.py",
+    "vendor": "cp node_modules/babylonjs/babylon.js public/vendor/babylon.js",
+    "test": "python3 -m unittest discover -s tests -v && node --test tests/engine.test.mjs"
+  },
+  "dependencies": {
+    "babylonjs": "9.30.0"
+  },
+  "type": "module"
+}
