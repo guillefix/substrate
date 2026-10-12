@@ -147,11 +147,104 @@ solver rejects nonfinite or out-of-bounds gates instead of silently clipping
 them. Extreme stimuli, voltages, capacitances, or conductances can require a
 smaller timestep; API acceptance is not a stability guarantee.
 
-This is a classical squid membrane model, **not a fitted human neuron**.
-There is no dendritic morphology, axonal propagation, synaptic input,
+The original lumped model is a classical squid membrane model, **not a fitted human neuron**.
+That lumped model has no dendritic morphology, axonal propagation, synaptic input,
 stochastic channel gating, calcium dynamics, plasticity, changing ion
 concentrations, or network. Reversal potentials are fixed unless explicitly
 edited. A membrane illustration should be labeled schematic. These numerical
 checks establish implementation behavior, not experimental validation or a
 unique biological explanation. A later discovery-oriented workflow should
 add measured data, parameter inference, uncertainty, and held-out stimuli.
+
+## Spatial cable and matched-protocol comparisons
+
+`substrate_model/cable.py` adds a uniform cylindrical cable with sealed ends.
+Every finite-volume segment has its own voltage and m/h/n state, the same
+local HH conductance densities, and axial coupling to its neighbors. This is
+a new physical model; it does not simulate the separately displayed Allen
+arbor or adopt the PDB protein structures as molecular dynamics.
+
+The default geometry is 1,000 µm long and 2 µm in diameter, divided into 21
+equal segments. Intracellular resistivity is 100 Ω·cm. Membrane area is the
+cylindrical lateral area πdL, without extra end caps. Center positions and
+segment areas are included in every cable run's geometry metadata.
+
+The local voltage budget becomes:
+
+```text
+C dV_i/dt = I_applied,i + I_axial,i - I_Na,i - I_K,i - I_leak,i
+I_axial,i = G_density × sum_over_neighbors(V_neighbor - V_i)
+G_density = 1000 × d_cm / (4 × Ra_ohm_cm × dx_cm²)  [mS/cm²]
+```
+
+Each edge contributes equal and opposite axial currents to its two adjacent
+segments; all segments have equal area. Positive axial current enters the
+segment. The whole coupled system uses fixed-step RK4 at 0.005 ms. Stimulus
+edges are step-aligned and held constant across all RK stages. The public
+solver rejects timesteps beyond a conservative axial stability bound; this
+bound alone does not guarantee stability for arbitrary channel parameters.
+
+`substrate_model/comparison.py` runs two independent copies of a matched
+protocol and returns recorded results. The default pulse is **0.6 nA total
+current for 1 ms, starting at 5 ms**, over a 40 ms run. The lumped model has
+the same total lateral area as the cable. Its single voltage distributes the
+injected current over that area; the cable receives the same total current
+in its proximal segment. This is an explicit difference in spatial input
+distribution, not equal current density at every local membrane patch.
+
+Both start from the exact same default resting voltage and gates. Optional
+conductance changes are interventions at this initial state, not separate
+resting-state fits. The middle cable segment is the default probe; every
+recorded sample also includes all segment states and budgets. Each run is
+independent of the live workbench and of the other comparison run.
+
+The recording includes the protocol's exact replay request, units, geometry,
+parameters, integrator and timestep. Sampling is every 0.1 ms. Spike counts
+and onset estimates use upward crossings of 0 mV, with linear interpolation
+between samples. Peak times are sampled peak times. Reported propagation
+delay is the distal-minus-proximal first crossing time, not a fitted velocity.
+
+### Numerical checks and independent reference
+
+The cable is checked against:
+
+- The lumped HH limit under uniform stimulation and uniform initial state.
+- Axial current conservation and the complete per-segment voltage budget.
+- Analytic decay of a passive discrete sealed-end cosine eigenmode.
+- Second-order spatial convergence toward the continuous passive cable
+  eigenmode under 7 → 21 → 63 segment refinement.
+- Active waveform convergence when halving dt from 0.005 to 0.0025 ms.
+- Deterministic repeated comparison runs and preservation of live model state.
+
+NEURON was evaluated using its official [geometry/discretization documentation](https://www.neuronsimulator.org/en/latest/progref/modelspec/programmatic/topology/geometry.html),
+[units](https://www.neuronsimulator.org/en/latest/guide/units.html), and
+[installation documentation](https://www.neuronsimulator.org/en/latest/install/install_instructions.html).
+NEURON 9.0.2 installs successfully in this project's Python 3.13 environment.
+The small cable remains an inspectable standard-library implementation for
+this bounded experiment; NEURON supplies an independent reference and is the
+stronger next candidate for branched morphology, additional mechanisms and
+larger simulations. It is not a runtime dependency of the local service.
+
+The optional `test_independent_neuron_reference` constructs the same geometry
+in NEURON, disables rate lookup interpolation, uses 6.3°C, the matching leak
+reversal and conductances, a 0.001 ms timestep, and second-order integration.
+The default cable's middle voltage differs by less than **0.00068 mV** from
+that reference over 40 ms in the checked environment. The automated test
+compares the first 15 ms with a 0.002 mV tolerance. It skips cleanly if NEURON
+is unavailable; install `neuron==9.0.2` to reproduce it.
+
+Matching another solver at the **same spatial grid** does not prove spatial
+convergence. A separate NEURON refinement check gave maximum middle-voltage
+differences from a 189-segment reference of approximately 20.03, 2.38 and
+0.24 mV for 7, 21 and 63 segments respectively, primarily on the steep
+upstroke. The 21-segment and 189-segment peaks were 37.90 and 37.97 mV. The
+21-segment default is therefore an exploratory grid, not the endpoint for
+quantitative propagation studies. Refine both space and time before such
+claims; [NEURON's d-lambda guidance](https://www.neuronsimulator.org/en/latest/guide/using_the_d_lambda_rule.html)
+is relevant when adapting real morphologies.
+
+The default matched experiment produces one spike in both models: the lumped
+peak is approximately 38.33 mV at 7.6 ms; the cable's middle peak is 37.90 mV
+at 7.0 ms. Its proximal-to-distal onset delay is approximately 1.80 ms. These
+are consequences of this illustrative geometry and stimulation protocol,
+not predictions for the mouse morphology or human/rat channel references.

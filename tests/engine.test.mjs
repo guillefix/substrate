@@ -49,3 +49,31 @@ test('several readouts receive one observation and can detach independently', ()
   assert.equal(received.length,3);
   assert.throws(()=>readouts.publish({}),/missing observable/);
 });
+
+import { RecordedRun } from '../public/engine/recorded-run.js';
+test('recorded run inspection owns snapshots and cannot mutate another run', () => {
+  const source={id:'a',model:'model-a',parameters:{c:1},samples:[{time:0,voltage:-65},{time:1,voltage:20}]};
+  const first=new RecordedRun(source), second=new RecordedRun({...source,id:'b'});
+  source.samples[1].voltage=99;
+  assert.equal(first.at(1).voltage,20);
+  assert.equal(second.at(1).voltage,20);
+  assert.throws(()=>{first.at(1).voltage=100;},TypeError);
+  assert.throws(()=>first.at(2),/outside/);
+  assert.throws(()=>new RecordedRun({...source,samples:[{time:1},{time:0}]}),/increasing/);
+});
+
+test('equation observations preserve probe scope, signs and selected parameter history', () => {
+  const e=createExperiment();
+  const r={time:5,voltage:-30,m:.5,h:.5,n:.25,i_na:-12,i_k:3,i_leak:1,i_applied:2,i_axial:-4};
+  const parameters={capacitance:2,g_na:80,e_na:50};
+  const o=e.accept({sample:r,parameters,scope:{modelId:'hh-cable',runId:'run-a',probeId:'compartment-4'}});
+  assert.equal(o.voltageSlope.value,3);
+  assert.equal(e.system.model,'hh-cable');
+  assert.equal(o.axialCurrent.value,-4);
+  assert.equal(o.capacitance.value,2);
+  assert.equal(o.sodiumConductance.value,80);
+  assert.ok(Object.values(o).every(v=>v.time===5&&v.runId==='run-a'&&v.probeId==='compartment-4'&&v.modelId==='hh-cable'));
+  const missing=e.accept({sample:{...r,i_axial:undefined},parameters,scope:{modelId:'hh-cable'}});
+  assert.equal(missing.axialCurrent.value,null);
+  assert.equal(missing.voltageSlope.value,null);
+});

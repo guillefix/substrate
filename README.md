@@ -80,8 +80,9 @@ Classical squid-axon Hodgkin–Huxley at 6.3°C, with one electrical compartment
 The scene uses a reconstructed mouse neuron and human/rat channel structures as
 explicitly separate anatomical references. The lipid bilayer is illustrative.
 These visuals do not change the squid model or derive its kinetics.
-There is no spatial propagation, synapse, molecular dynamics, stochastic
-single-channel process, or diffusion yet. The channel
+The comparison cable adds spatial propagation along an idealized cylinder.
+There is no branched electrical morphology, synapse, molecular dynamics,
+stochastic single-channel process, or diffusion yet. The channel
 readouts describe mean-field population gating. VR and GPU simulation are
 future integration tests, not current features.
 
@@ -92,10 +93,16 @@ in `public/vendor/`. The model runs without Babylon or ManimGX. ManimGX is an
 optional feasibility probe, pinned separately in `probes/requirements.txt`;
 it requires Python 3.13+. There is no need to install it to run the workbench.
 
-## Next phases (planned)
+## Model comparison and explanation
 
-- [Model comparison](docs/model-comparison.md): replay a controlled protocol across independent model runs.
+- **Run matched comparison** creates independent uniform HH and 21-compartment cable recordings. Adjust total pulse current and duration, choose a run, and compare near/far voltage traces.
+- Scrub **Inspect a moment** and choose a cable probe (or click a segment) to update geometry, currents and equation values together. Returning to live preserves its state.
+- **Why does the voltage change?** explains current balance, current direction and sodium gating. Select a term to emphasize its related trace.
+- **Export comparison** saves both runs, protocol, units, geometry and metrics.
+- [Model comparison](docs/model-comparison.md): implemented boundary and future directions.
 - [Model exposition](docs/model-exposition.md): connect equations and physical principles to observations.
 - [Visual sources](docs/visual-assets.md): provenance, transformations and asset-specific terms.
 
-Model comparison and equation exposition are planned, not implemented UI features.
+This first comparison uses an idealized cable, not the reconstructed branching morphology. The 21-segment grid is exploratory; numerical convergence evidence and resolution limits are in MODEL.md. Equations use the selected sampled observation, without interpolation.
+
+The interactive live solver remains one shared local experiment. Completed comparison runs are independent, immutable browser-side records; export them before reloading to keep them.

@@ -1,7 +1,10 @@
-# Planned: one experiment, multiple models
+# One experiment, multiple models
 
-This is the next-phase design, not functionality implemented in the current
-single-patch Hodgkin–Huxley prototype.
+The first controlled comparison is implemented: a single HH compartment and
+a 21-compartment idealized cable, independent completed runs, matched current
+and area, near/far metrics and traces, model/anatomy views, and time/probe
+inspection linked to current-balance explanations. Later branches below remain
+planned. See MODEL.md and SERVER.md for numerical evidence and exact protocol.
 
 ## Purpose
 
@@ -63,7 +66,7 @@ These branches can eventually be combined, but each should first demonstrate
 what it contributes on its own. Adding a second neuron and synapse is a separate
 system-composition experiment rather than an automatic fidelity upgrade.
 
-## Engine concepts to introduce when implemented
+## Engine concepts
 
 - **Model definition:** equations/backend/version, state schema, units,
   assumptions, parameter sources, supported observables and inputs.
@@ -82,7 +85,7 @@ geometry remains a readout. Visual detail must not imply simulated detail.
 
 ## Switching models
 
-The initial interaction selects a result or reruns the same protocol with a
+The implemented interaction selects a result or reruns the same protocol with a
 different model. It does not silently transfer a running state. Live model
 replacement would require an explicit initialization/projection rule, checking
 units, charge/concentrations, hidden states, and equilibration. That is later work.

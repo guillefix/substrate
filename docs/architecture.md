@@ -75,9 +75,11 @@ The immutable HH model description now has its own identity, assumptions, state
 variable names and model-representation descriptor. The anatomy/model toggle
 selects presentation without changing the model or its observations.
 
-The current `System` class still combines subject and single-model snapshot. It is a
-prototype shortcut, not the intended multi-model contract. Separate these roles
-when introducing model instances and runs.
+The `System` class represents the currently inspected local snapshot. Its model
+identity updates with selection; immutable `RecordedRun` objects own completed
+run histories independently. Observations carry model, run and probe identities.
+The conceptual anatomical subject remains separate from these local snapshots.
+This is a small initial contract, not a physical-device digital twin.
 
 Representations can target the system (an anatomical reconstruction), a model
 (a lumped compartment, cable or discretized tree), or observations (voltage
@@ -85,7 +87,7 @@ colors and plots). A model diagram is not inherently a sensor: it can expose
 model structure without measuring a dynamic quantity. Sensors supply
 observations that can be layered onto either representation.
 
-The anatomy/model-view control is implemented; model selection is future work. Toggling
+The anatomy/model-view control is implemented; selection between live HH and independent recorded HH/cable runs is implemented. Toggling
 representation never changes the active model. A single-compartment model can
 be shown as one compartment or equivalent circuit; a cable model as connected
 segments; a branched model as its compartment graph. The anatomy view remains
@@ -98,8 +100,8 @@ prediction, not spatially resolved measurements. Missing correspondences and
 unsupported quantities remain visible. The present mixed-species structural
 references do not constitute a measured digital twin of one specimen.
 
-The first cell, membrane, and channel representations all refer to the same
-single membrane system. Their scales express explanatory focus; they do not
+The cell, membrane and channel references display the selected local observation.
+The single-compartment diagram or segmented cable exposes the selected model. Their scales express explanatory focus; they do not
 create new physical resolution. Channel open fractions derive from m³h and
 n⁴. They are population expectations, not sampled individual channel events.
 

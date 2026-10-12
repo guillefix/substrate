@@ -56,6 +56,7 @@ export class Experiment {
         unit: variable.unit, time: this.system.time, timeUnit: sensor.timeUnit,
         systemId: this.system.id, sensorId: sensor.id,
         source: sensor.source, measurementModel: sensor.measurementModel,
+        ...(context.scope ? { modelId: context.scope.modelId, runId: context.scope.runId, probeId: context.scope.probeId } : {}),
       })];
     }));
   }

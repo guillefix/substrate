@@ -3,13 +3,20 @@
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#111817"><title>Substrate — Neuron workbench</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css"><link rel="stylesheet" href="explanations/current-balance.css">
 </head>
 <body>
   <header class="topbar"><a class="brand" href="/" aria-label="Substrate home"><span class="mark">S</span> SUBSTRATE <span class="edition">/ 001</span></a><span class="top-note">An instrument for living systems</span><span class="connection" id="connection">Connecting…</span></header>
   <main>
     <section class="heading"><div><p class="eyebrow">THE NEURON WORKBENCH</p><h1>From a neuron to a channel.</h1><p class="intro">Explore the anatomy. Inspect the approximation.</p></div><button class="quiet" id="export">Export experiment <span aria-hidden="true">↗</span></button></section>
     <div id="error" class="error" role="alert" hidden></div>
+    <section class="comparison-panel" aria-label="Model comparison">
+      <div class="comparison-heading"><div><p class="eyebrow">ONE PROTOCOL · TWO MODELS</p><h2>What changes when space matters?</h2></div><button id="compare-models" class="quiet">Run matched comparison</button></div>
+      <div class="comparison-parameters"><label for="comparison-current">Total pulse current <input id="comparison-current" type="number" min="0" max="1" step="0.1" value="0.6"> nA</label><label for="comparison-duration">Duration <input id="comparison-duration" type="number" min="0.1" max="3" step="0.1" value="1"> ms</label><span>Starts at 5 ms · 40 ms recording · default channel conductances</span></div>
+      <p id="protocol-summary">Compare one uniform compartment with an idealized spatial cable. Same total membrane area and injected current; different spatial distribution.</p>
+      <div class="run-selector" role="group" aria-label="Select experiment run"><button id="select-live" data-run="" aria-pressed="true">Live single compartment</button><span id="run-choices"></span><button id="export-comparison" hidden>Export comparison ↗</button></div>
+      <div id="comparison-results" hidden><table><caption>Spike onset: first upward crossing of 0 mV, measured from experiment start.</caption><thead><tr><th>Readout</th><th>Peak voltage</th><th>First spike</th><th>Spikes</th></tr></thead><tbody id="comparison-metrics"></tbody></table><p id="resolution-note" class="hint"></p></div>
+    </section>
     <section class="representation-bar" aria-label="Representation">
       <div class="representation-choice" role="group" aria-label="Choose representation"><button data-representation="anatomy" class="active" aria-pressed="true">Anatomy view</button><button data-representation="model" aria-pressed="false">Model view</button></div>
       <p><span>ACTIVE MODEL</span><strong id="active-model">Hodgkin–Huxley · single compartment</strong></p>
@@ -18,7 +25,7 @@
       <section class="scene-panel" aria-label="Interactive neuron visualization">
         <div class="scene-top"><nav id="anatomy-scales" class="view-nav" aria-label="View scale"><button data-view="neuron" class="active" aria-pressed="true">01 <span>Neuron</span></button><button data-view="membrane" aria-pressed="false">02 <span>Membrane</span></button><button data-view="channel" aria-pressed="false">03 <span>Channel</span></button></nav><span class="tag" id="scene-kind">BIOLOGICAL REFERENCES · 3D</span></div>
         <canvas id="scene" aria-label="3D model; drag to rotate and scroll to zoom"></canvas>
-        <div class="model-summary" id="model-summary" hidden><span>ONE SHARED VOLTAGE</span><strong id="model-voltage">−65.00 mV</strong><span>4 state variables: V · m · h · n</span></div>
+        <div class="model-summary" id="model-summary" hidden><span id="model-summary-label">ONE SHARED VOLTAGE</span><strong id="model-voltage">−65.00 mV</strong><span id="model-state-label">4 state variables: V · m · h · n</span></div>
         <div class="scene-description"><p class="eyebrow" id="scale-label">WHOLE NEURON</p><h2 id="scene-title">A shared electrical state</h2><p id="scene-caption">Select the soma to inspect the membrane. Shape is illustrative; this model has no spatial propagation.</p><a id="structure-source" href="assets/biology/provenance.html" target="_blank" rel="noopener">Sources and interpretation ↗</a></div>
         <div class="channel-switch" id="channel-switch" hidden><button data-channel="na" class="active" aria-pressed="true">Sodium</button><button data-channel="k" aria-pressed="false">Potassium</button></div>
         <div class="scene-bottom"><span><i class="live-dot"></i> Same simulation at every scale</span><span>Drag to orbit · scroll to zoom</span></div>
@@ -26,8 +33,8 @@
       <aside class="controls">
         <div class="readout-head"><span class="eyebrow">MEMBRANE POTENTIAL</span><span id="run-status" class="status">PAUSED</span></div>
         <div class="voltage"><span id="voltage">−65.00</span><span class="unit">mV</span></div>
-        <div class="time-row"><span>Simulation time</span><span><b id="time">0.00</b> / 200 ms</span></div><div class="progress"><div id="progress-fill"></div></div>
-        <div class="transport"><button class="primary" id="run">Run experiment <span>▶</span></button><button class="icon-button" id="reset" aria-label="Reset experiment" title="Reset experiment">↺</button></div>
+        <div class="time-row"><span>Simulation time</span><span><b id="time">0.00</b> / <span id="time-limit">200</span> ms</span></div><div class="progress"><div id="progress-fill"></div></div>
+        <div id="live-controls"><div class="transport"><button class="primary" id="run">Run experiment <span>▶</span></button><button class="icon-button" id="reset" aria-label="Reset experiment" title="Reset experiment">↺</button></div>
         <div class="control-section"><div class="section-label"><h3>Stimulus</h3><span>INWARD CURRENT</span></div>
           <label class="slider-label" for="amplitude">Current amplitude <output id="amplitude-value">10 µA/cm²</output></label><input id="amplitude" type="range" min="0" max="30" step="1" value="10">
           <label class="slider-label" for="duration">Pulse duration <output id="duration-value">1.0 ms</output></label><input id="duration" type="range" min="0.1" max="5" step="0.1" value="1">
@@ -38,11 +45,16 @@
           <label class="slider-label" for="g-k"><span><i class="key potassium"></i>Potassium</span><output id="g-k-value">36 mS/cm²</output></label><input id="g-k" type="range" min="0" max="72" step="1" value="36">
           <p class="hint">Changes affect the current experiment without resetting its state.</p>
         </div>
+        </div><div id="recorded-controls" hidden><p>This completed run is independent of the live experiment. Scrub below to inspect it.</p><button id="return-live" class="quiet">Return to live experiment</button></div>
+        <p id="probe-caption" class="hint">Uniform model prediction</p>
         <div class="gates"><div><span>m · Na activation</span><b id="gate-m">0.053</b></div><div><span>h · Na availability</span><b id="gate-h">0.596</b></div><div><span>n · K activation</span><b id="gate-n">0.318</b></div></div>
       </aside>
     </div>
-    <section class="plots" aria-label="Experiment traces"><article><div class="plot-heading"><h3>Voltage</h3><span class="legend"><i class="key voltage-key"></i> membrane potential</span><span>mV</span></div><canvas id="voltage-plot" aria-label="Membrane voltage versus time"></canvas></article><article><div class="plot-heading"><h3>Currents</h3><span class="legend"><i class="key sodium"></i> Na <i class="key potassium"></i> K <i class="key applied"></i> stimulus</span><span>µA/cm²</span></div><canvas id="current-plot" aria-label="Sodium, potassium, and applied current versus time"></canvas></article></section>
-    <footer><span class="model-badge">HODGKIN–HUXLEY</span><p>Single compartment · classical squid membrane · 6.3°C<br><span>Sourced anatomy and protein structures illustrate this model; they do not determine its kinetics. Gates describe populations, not individual molecules.</span></p><a class="footer-note" href="assets/biology/provenance.html" target="_blank" rel="noopener">Sources and interpretation ↗</a></footer>
+    <section class="inspection-panel" aria-label="Time inspection"><div><label for="inspect-time">Inspect a moment</label><span id="inspection-status">Waiting for observations</span><button id="follow-live" hidden>Follow live time</button></div><input id="inspect-time" type="range" min="0" max="0" value="0" step="1" aria-label="Inspection sample"><label id="probe-select-wrap" hidden for="probe-select">Cable probe <select id="probe-select"></select></label><p>Inspection reads a saved sample; it does not rewind or restart the solver.</p></section>
+    <p id="plot-focus" class="focus-caption" aria-live="polite"></p>
+    <section class="plots" aria-label="Experiment traces"><article><div class="plot-heading"><h3>Voltage</h3><span class="legend" id="voltage-legend">Selected membrane voltage</span><span>mV</span></div><canvas id="voltage-plot" aria-label="Membrane voltage versus time"></canvas></article><article><div class="plot-heading"><h3>Currents</h3><span class="legend"><i class="key sodium"></i> Na <i class="key potassium"></i> K <i class="key applied"></i> input <i class="key axial"></i> axial <i class="key leak"></i> leak</span><span>µA/cm²</span></div><canvas id="current-plot" aria-label="Sodium, potassium, and applied current versus time"></canvas></article></section>
+    <section id="equation-explanation" aria-label="Model explanation"></section>
+    <footer><span class="model-badge">HODGKIN–HUXLEY</span><p>Classical squid membrane kinetics · 6.3°C · uniform compartment or idealized cable<br><span>Sourced anatomy and protein structures illustrate this model; they do not determine its kinetics. Gates describe populations, not individual molecules.</span></p><a class="footer-note" href="assets/biology/provenance.html" target="_blank" rel="noopener">Sources and interpretation ↗</a></footer>
   </main>
   <script src="vendor/babylon.js"></script><script type="module" src="app.js"></script>
 </body>

@@ -39,3 +39,26 @@ test('anatomy/model switching preserves observations, model and remembered anato
     renderer?.dispose(); engine?.dispose(); globalThis.window=oldWindow; globalThis.fetch=oldFetch;
   }
 });
+
+test('cable geometry presents local voltages and keeps model topology when inspecting time', async () => {
+  const oldWindow=globalThis.window,oldFetch=globalThis.fetch;
+  let engine,renderer;
+  globalThis.window={BABYLON:{...B,Engine:class extends B.NullEngine{constructor(){super();engine=this;}}},devicePixelRatio:1,addEventListener(){},removeEventListener(){}};
+  globalThis.fetch=async url=>({ok:true,json:async()=>JSON.parse(await readFile(new URL(`../public${url}`,import.meta.url),'utf8'))});
+  try {
+    const {cableModel}=await import('../public/models/cable.js');
+    renderer=createNeuronRenderer({});await renderer.ready;
+    renderer.setModel(cableModel,{nseg:3});renderer.setRepresentation('model');
+    const scene=engine.scenes[0],first=scene.getMeshByName('cable-compartment-0'),last=scene.getMeshByName('cable-compartment-2');
+    renderer.update({voltage:{value:10}},{probeIndex:2,compartments:[{voltage:-65},{voltage:0},{voltage:40}]});
+    assert.notDeepEqual(first.material.diffuseColor.asArray(),last.material.diffuseColor.asArray());
+    assert.equal(last.scaling.x,1.18);
+    const before=scene.meshes.length;
+    renderer.update({voltage:{value:-65}},{probeIndex:0,compartments:[{voltage:-65},{voltage:-65},{voltage:-65}]});
+    assert.equal(scene.meshes.length,before);
+    assert.equal(first,scene.getMeshByName('cable-compartment-0'));
+    assert.equal(scene.getTransformNodeByName('spatial-cable-model').isEnabled(),true);
+    renderer.setRepresentation('anatomy');
+    assert.doesNotMatch(renderer.description().caption,/no spatial propagation/);
+  } finally {renderer?.dispose();engine?.dispose();globalThis.window=oldWindow;globalThis.fetch=oldFetch;}
+});

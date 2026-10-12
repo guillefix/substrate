@@ -10,6 +10,7 @@ import threading
 from urllib.parse import unquote, urlsplit
 
 from substrate_model import Simulator
+from substrate_model.comparison import run_comparison
 
 PUBLIC = Path(__file__).parent / "public"
 LIMIT_MS = 200
@@ -42,6 +43,7 @@ def conductances(body):
 class Workbench:
     def __init__(self):
         self.lock = threading.Lock()
+        self.comparison_lock = threading.Lock()
         self.sim = Simulator()
 
     def status(self, samples=()):
@@ -51,6 +53,13 @@ class Workbench:
                 "duration_limit_ms": LIMIT_MS, "done": self.sim.time >= LIMIT_MS}
 
     def dispatch(self, method, path, body):
+        if method == "POST" and path == "/api/comparison":
+            if not self.comparison_lock.acquire(blocking=False):
+                raise ValueError("A comparison is already running; wait for it to finish and retry")
+            try:
+                return run_comparison(body)
+            finally:
+                self.comparison_lock.release()
         with self.lock:
             if method == "GET" and path == "/api/state":
                 return self.status()

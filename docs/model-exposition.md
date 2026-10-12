@@ -1,7 +1,35 @@
-# Planned: explain the model while exploring it
+# Explain the model while exploring it
 
-This is a next-phase design. Equation rendering, guided explanations and model
-comparison are not implemented by the current workbench.
+The first standalone explanation component is implemented. The broader authoring
+and model-comparison design below remains a roadmap; it is not a general-purpose
+explanation engine.
+
+## Implemented first component
+
+`public/explanations/current-balance.js` exports
+`mountCurrentBalance(container, { onFocus })`. It returns
+`update(observations, { modelLabel, probeLabel, inspectionLabel })` and `dispose()`.
+Its companion CSS is scoped to `.current-balance`; no equation-rendering library
+or external content service is needed. The application owns mounting, observation
+selection, time inspection and focus routing to other readouts.
+
+The panel provides three authored steps, term selection, current direction
+readouts and expandable sodium-current factors. It displays supplied observations
+and never advances the solver or recomputes a voltage derivative. Its capacitive
+term shows capacitance and voltage slope separately. An axial-current observation
+adds the inward-positive spatial coupling term to the balance; an explicit zero
+remains distinct from a missing observation.
+
+All finite bound observations must share a timestamp and compatible units.
+Supplied model, run, system and probe identities must agree; a mismatch clears the
+numeric display with an explanation. Null-valued or absent observations remain
+unavailable. When identity metadata is absent, the component cannot establish
+that identity and relies on the application's observation selection.
+
+Four tests in `tests/explanation.test.mjs` cover current signs, incompatible
+timestamps/scopes/units, absence versus explicit zero, small-value formatting,
+immutable snapshots and retaining the supplied derivative. Full application
+interaction and responsive layout require browser verification after integration.
 
 ## Two independent directions
 
@@ -50,11 +78,15 @@ do not silently substitute total current.
 The first transformations are authored mathematical steps:
 
 ```text
-I_applied = I_capacitive + I_Na + I_K + I_leak
+I_applied + I_axial = I_capacitive + I_Na + I_K + I_leak
 I_capacitive = C_m dV/dt
-C_m dV/dt = I_applied - I_Na - I_K - I_leak
+C_m dV/dt = I_applied + I_axial - I_Na - I_K - I_leak
 I_Na = gbar_Na m³h (V - E_Na)
 ```
+
+For a spatial compartment, `I_axial` is the net inward current from neighboring
+compartments, divided by local membrane area. It is absent in the uniform model's
+physical assumptions; the adapter may explicitly supply zero for that model.
 
 Charge conservation supplies the balance. A constant-capacitance approximation
 supplies the capacitive relation; an effective conductance law supplies each
@@ -147,9 +179,9 @@ a stimulus or reset, it uses the normal input path and records the intervention.
 
 ## Delivery boundary
 
-Finish and checkpoint the current workbench first. Then implement this one
-explanatory sequence as a small parallel workstream to the first spatial-model
-comparison. Agree on model identity, observation bindings and inspection time
-before either stream modifies shared engine interfaces. Keep episode content
+Integrate this explanatory sequence as a small parallel workstream to the first
+spatial-model comparison, preserving a checkpoint of the earlier workbench.
+Agree on model identity, observation bindings and inspection time before either
+stream modifies shared engine interfaces. Keep episode content
 outside the engine core. Defer automatic derivation, arbitrary equation editing,
 microscopic kinetics, narration generation and a general-purpose lesson editor.
