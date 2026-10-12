@@ -53,6 +53,9 @@ test('cable geometry presents local voltages and keeps model topology when inspe
     renderer.update({voltage:{value:10}},{probeIndex:2,compartments:[{voltage:-65},{voltage:0},{voltage:40}]});
     assert.notDeepEqual(first.material.diffuseColor.asArray(),last.material.diffuseColor.asArray());
     assert.equal(last.scaling.x,1.18);
+    const beforeFocus=last.material.emissiveColor.asArray();
+    renderer.setFocus('sodiumCurrent');renderer.update({voltage:{value:10}});
+    assert.notDeepEqual(last.material.emissiveColor.asArray(),beforeFocus);
     const before=scene.meshes.length;
     renderer.update({voltage:{value:-65}},{probeIndex:0,compartments:[{voltage:-65},{voltage:-65},{voltage:-65}]});
     assert.equal(scene.meshes.length,before);

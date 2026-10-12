@@ -3,6 +3,7 @@ export function createCable(B, scene) {
   const root = new B.TransformNode("spatial-cable-model", scene);
   let segments = [],
     count = 0;
+  let focusColor = null;
   const cold = B.Color3.FromHexString("#759fa2"),
     hot = B.Color3.FromHexString("#f0b16c");
   const markerMaterial = new B.StandardMaterial("input-location", scene);
@@ -45,6 +46,10 @@ export function createCable(B, scene) {
   return {
     root,
     configure,
+    setFocus(key) {
+      const colors = {sodiumCurrent:'#e9ae7f',potassiumCurrent:'#86bbd5',appliedCurrent:'#d6ca8b',axialCurrent:'#c9a5d5'};
+      focusColor = colors[key] ? B.Color3.FromHexString(colors[key]) : null;
+    },
     update(states = [], probeIndex = 0) {
       for (let i = 0; i < segments.length; i++) {
         const voltage = states[i]?.voltage;
@@ -53,7 +58,7 @@ export function createCable(B, scene) {
           : 0;
         const m = segments[i].material;
         m.diffuseColor = B.Color3.Lerp(cold, hot, value);
-        m.emissiveColor = m.diffuseColor.scale(i === probeIndex ? 0.3 : 0.055);
+        m.emissiveColor = i === probeIndex && focusColor ? focusColor.scale(.45) : m.diffuseColor.scale(i === probeIndex ? 0.3 : 0.055);
         segments[i].scaling.x = segments[i].scaling.z =
           i === probeIndex ? 1.18 : 1;
       }

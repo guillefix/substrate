@@ -262,7 +262,7 @@ export function createNeuronRenderer(canvas, { onSelect = () => {}, onProbe = ()
   }
   return { setView, setRepresentation, update, description, ready,
     setModel(model, geometry) { modelDefinition = model; if (model.id === 'hh-cable') cable.configure(geometry); setView(view, selectedChannel); },
-    setFocus(observable) { focusedObservable = observable; },
+    setFocus(observable) { focusedObservable = observable; compartment.setFocus(observable); cable.setFocus(observable); },
     resize: () => engine.resize(),
     dispose: () => { disposed = true; engine.stopRenderLoop(); scene.dispose(); engine.dispose(); } };
 }

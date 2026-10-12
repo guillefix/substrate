@@ -18,7 +18,10 @@ export function createCompartment(B, scene, model) {
   const ring = B.MeshBuilder.CreateTorus('one-membrane-boundary', { diameter: 4.25, thickness: .025, tessellation: 96 }, scene);
   ring.parent = root; ring.position.y = .8; ring.rotation.x = Math.PI / 2;
   ring.material = rimMaterial; ring.isPickable = false;
-  return { root, update(observations) {
+  return { root, setFocus(key) {
+    const colors = {sodiumCurrent:'#e9ae7f',potassiumCurrent:'#86bbd5',appliedCurrent:'#d6ca8b',axialCurrent:'#c9a5d5'};
+    rimMaterial.emissiveColor = B.Color3.FromHexString(colors[key] || '#c4deb4');
+  }, update(observations) {
     const voltage = observations?.voltage?.value ?? -65;
     const excitation = Math.max(0, Math.min(1, (voltage + 65) / 105));
     material.emissiveColor = material.diffuseColor.scale(.035 + excitation * .35);
