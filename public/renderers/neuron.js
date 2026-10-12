@@ -1,3 +1,6 @@
+import { createCompartment } from './compartment.js';
+import { hhModel } from '../models/hh.js';
+
 /** Biology reference renderer. Geometry is static; HH observations affect color only.
  * Source coordinates and processing are documented in docs/visual-assets.md.
  */
@@ -21,6 +24,10 @@ export function createNeuronRenderer(canvas, { onSelect = () => {} } = {}) {
   rim.diffuse = B.Color3.FromHexString('#d9e1be'); rim.intensity = .5;
 
   const roots = Object.fromEntries(['neuron', 'membrane', 'channel'].map(name => [name, new B.TransformNode(name, scene)]));
+  const compartment = createCompartment(B, scene, hhModel);
+  roots.model = compartment.root;
+  roots.model.setEnabled(false);
+  let representation = 'anatomy';
   roots.membrane.setEnabled(false); roots.channel.setEnabled(false);
   const channels = { na: new B.TransformNode('nav1.7', scene), k: new B.TransformNode('kv1.2', scene) };
   channels.na.parent = roots.channel; channels.k.parent = roots.channel; channels.k.setEnabled(false);
@@ -177,13 +184,14 @@ export function createNeuronRenderer(canvas, { onSelect = () => {} } = {}) {
   }
 
   scene.onPointerObservable.add(info => {
-    if (info.type !== B.PointerEventTypes.POINTERPICK) return;
+    if (representation !== 'anatomy' || info.type !== B.PointerEventTypes.POINTERPICK) return;
     const selected = info.pickInfo?.pickedMesh?.metadata;
     if (selected?.representation === 'neuron') onSelect({ view: 'membrane', channel: selectedChannel });
     if (selected?.representation === 'patch') onSelect({ view: 'channel', channel: selected.channel || 'na' });
   });
-  const perspectives = { neuron: { radius: 12, alpha: -Math.PI / 2, beta: 1.39 }, membrane: { radius: 11.6, alpha: -1.16, beta: 1.06 }, channel: { radius: 10.3, alpha: -1.06, beta: 1.18 } };
+  const perspectives = { model: { radius: 10, alpha: -Math.PI / 2, beta: 1.39 }, neuron: { radius: 12, alpha: -Math.PI / 2, beta: 1.39 }, membrane: { radius: 11.6, alpha: -1.16, beta: 1.06 }, channel: { radius: 10.3, alpha: -1.06, beta: 1.18 } };
   const description = (scale = view, kind = selectedChannel) => {
+    if (representation === 'model') return { label: 'MODEL · SINGLE COMPARTMENT', title: hhModel.representation.label, caption: hhModel.representation.caption };
     if (loadError) return { label: 'REFERENCE UNAVAILABLE', title: 'Geometry could not be loaded', caption: loadError.message };
     if (!loaded) return { label: 'BIOLOGICAL REFERENCES', title: 'Loading local structure data', caption: 'Reconstructed morphology and experimental channel coordinates.' };
     if (scale === 'neuron') return { label: 'RECONSTRUCTED MOUSE NEURON', title: 'A traced dendritic arbor',
@@ -201,14 +209,16 @@ export function createNeuronRenderer(canvas, { onSelect = () => {} } = {}) {
   };
 
   function setView(next, channel = 'na') {
-    if (!(next in roots)) throw new Error('Unknown biological view');
+    if (!['neuron', 'membrane', 'channel'].includes(next)) throw new Error('Unknown biological view');
     view = next; selectedChannel = channel === 'k' ? 'k' : 'na';
-    Object.entries(roots).forEach(([name, root]) => root.setEnabled(name === next));
+    const visible = representation === 'model' ? 'model' : next;
+    Object.entries(roots).forEach(([name, root]) => root.setEnabled(name === visible));
     channels.na.setEnabled(selectedChannel === 'na'); channels.k.setEnabled(selectedChannel === 'k');
-    transition = { started: performance.now(), radius: camera.radius, alpha: camera.alpha, beta: camera.beta, destination: perspectives[next] };
+    transition = { started: performance.now(), radius: camera.radius, alpha: camera.alpha, beta: camera.beta, destination: perspectives[visible] };
   }
   function update(next) {
     observations = next;
+    compartment.update(next);
     const voltage = next?.voltage?.value ?? -65;
     const excitation = Math.max(0, Math.min(1, (voltage + 65) / 105));
     for (const mat of neuronMaterials) mat.emissiveColor = mat.diffuseColor.scale(.025 + excitation * .22);
@@ -235,7 +245,11 @@ export function createNeuronRenderer(canvas, { onSelect = () => {} } = {}) {
     drawMorphology(morphology); drawBilayer(); drawProtein(sodium, 'na'); drawProtein(potassium, 'k');
     loaded = true; update(observations); setView(view, selectedChannel);
   }).catch(error => { loadError = error; throw error; });
-  return { setView, update, description, ready,
+  function setRepresentation(next) {
+    if (!['anatomy', 'model'].includes(next)) throw new Error('Unknown representation');
+    representation = next; setView(view, selectedChannel);
+  }
+  return { setView, setRepresentation, update, description, ready,
     resize: () => engine.resize(),
     dispose: () => { disposed = true; engine.stopRenderLoop(); scene.dispose(); engine.dispose(); } };
 }

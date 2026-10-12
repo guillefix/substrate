@@ -1,4 +1,5 @@
 import { System, Experiment } from '../engine/core.js';
+import { hhModel } from '../models/hh.js';
 
 /** Scientific concepts independent of Babylon, DOM, transport, and numerical solver.
  * This experiment uses ideal simulated sensors. A hardware adapter would provide
@@ -17,7 +18,7 @@ export function createExperiment() {
     potassiumActivation: { label: 'Potassium activation gate', unit: '1', read: s => s.n },
   };
   const system = new System({
-    id: 'membrane-1', label: 'Excitable membrane', model: 'classic-squid-hh',
+    id: 'membrane-1', label: 'Excitable membrane', model: hhModel.id,
     // Different scales of representation, not three different physical models.
     representations: [
       { id: 'neuron', label: 'Cell context', systemId: 'membrane-1', fidelity: 'single-compartment schematic' },
@@ -35,6 +36,7 @@ export function createExperiment() {
     { id: 'conductance-edit', kind: 'parameter-intervention', unit: 'mS/cm²' },
   ];
   const experiment = new Experiment({ id: 'neuron-experiment', system, observables, sensors, inputs });
+  experiment.model = hhModel;
   let readout = null;
   const observe = experiment.observe.bind(experiment);
   experiment.observe = () => readout ? observe(readout) : {};

@@ -22,6 +22,12 @@ npm start
 Open <http://127.0.0.1:8765>. Stop the local service with Ctrl-C.
 The service exposes one shared, in-memory experiment to local tabs.
 
+Switch **Anatomy view / Model view** to compare sourced anatomical references
+with the current model’s single electrical compartment. The active model stays
+Hodgkin–Huxley; switching representation preserves the state and remembered
+anatomical scale. The model view shows one shared voltage and its four state
+variables, not a spatial simulation.
+
 Start a current pulse with **Stimulate**, pause the experiment to inspect it,
 and switch between the cell, membrane, and channel views. Conductance edits
 change the ongoing model. Export a recording before resetting if you want to
@@ -35,7 +41,9 @@ time; display time is deliberately slower.
 | `public/engine/core.js` | Systems, snapshots, experiments, observables, sensors, optional inputs |
 | `public/experiments/neuron.js` | Neuron-specific observable definitions and model adapter |
 | `public/app.js` | First workbench application, plots and controls |
-| `public/renderers/neuron.js` | Babylon scene consuming observations |
+| `public/renderers/neuron.js` | Babylon scene and independent anatomy/model representation selection |
+| `public/renderers/compartment.js` | Single-compartment model diagram |
+| `public/models/hh.js` | Immutable model description, assumptions and representation identity |
 | `public/engine/readouts.js` | Named readouts bound to selected observations |
 | `public/adapters/local-model.js` | Serialized local model connection |
 | `public/assets/biology/` | Sourced structural references and attribution |

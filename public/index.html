@@ -8,12 +8,17 @@
 <body>
   <header class="topbar"><a class="brand" href="/" aria-label="Substrate home"><span class="mark">S</span> SUBSTRATE <span class="edition">/ 001</span></a><span class="top-note">An instrument for living systems</span><span class="connection" id="connection">Connecting…</span></header>
   <main>
-    <section class="heading"><div><p class="eyebrow">THE NEURON WORKBENCH</p><h1>From a neuron to a channel.</h1><p class="intro">One membrane model. Three ways to look closer.</p></div><button class="quiet" id="export">Export experiment <span aria-hidden="true">↗</span></button></section>
+    <section class="heading"><div><p class="eyebrow">THE NEURON WORKBENCH</p><h1>From a neuron to a channel.</h1><p class="intro">Explore the anatomy. Inspect the approximation.</p></div><button class="quiet" id="export">Export experiment <span aria-hidden="true">↗</span></button></section>
     <div id="error" class="error" role="alert" hidden></div>
+    <section class="representation-bar" aria-label="Representation">
+      <div class="representation-choice" role="group" aria-label="Choose representation"><button data-representation="anatomy" class="active" aria-pressed="true">Anatomy view</button><button data-representation="model" aria-pressed="false">Model view</button></div>
+      <p><span>ACTIVE MODEL</span><strong id="active-model">Hodgkin–Huxley · single compartment</strong></p>
+    </section>
     <div class="workbench">
       <section class="scene-panel" aria-label="Interactive neuron visualization">
-        <div class="scene-top"><nav class="view-nav" aria-label="View scale"><button data-view="neuron" class="active" aria-pressed="true">01 <span>Neuron</span></button><button data-view="membrane" aria-pressed="false">02 <span>Membrane</span></button><button data-view="channel" aria-pressed="false">03 <span>Channel</span></button></nav><span class="tag">BIOLOGICAL REFERENCES · 3D</span></div>
+        <div class="scene-top"><nav id="anatomy-scales" class="view-nav" aria-label="View scale"><button data-view="neuron" class="active" aria-pressed="true">01 <span>Neuron</span></button><button data-view="membrane" aria-pressed="false">02 <span>Membrane</span></button><button data-view="channel" aria-pressed="false">03 <span>Channel</span></button></nav><span class="tag" id="scene-kind">BIOLOGICAL REFERENCES · 3D</span></div>
         <canvas id="scene" aria-label="3D model; drag to rotate and scroll to zoom"></canvas>
+        <div class="model-summary" id="model-summary" hidden><span>ONE SHARED VOLTAGE</span><strong id="model-voltage">−65.00 mV</strong><span>4 state variables: V · m · h · n</span></div>
         <div class="scene-description"><p class="eyebrow" id="scale-label">WHOLE NEURON</p><h2 id="scene-title">A shared electrical state</h2><p id="scene-caption">Select the soma to inspect the membrane. Shape is illustrative; this model has no spatial propagation.</p><a id="structure-source" href="assets/biology/provenance.html" target="_blank" rel="noopener">Sources and interpretation ↗</a></div>
         <div class="channel-switch" id="channel-switch" hidden><button data-channel="na" class="active" aria-pressed="true">Sodium</button><button data-channel="k" aria-pressed="false">Potassium</button></div>
         <div class="scene-bottom"><span><i class="live-dot"></i> Same simulation at every scale</span><span>Drag to orbit · scroll to zoom</span></div>

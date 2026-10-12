@@ -6,6 +6,7 @@ import { createNeuronRenderer } from './renderers/neuron.js';
 const $ = (id) => document.getElementById(id);
 const experiment = createExperiment();
 let latest = null, observations = null, history = [], running = false, advancing = false;
+let representation = 'anatomy';
 let view = 'neuron', selectedChannel = 'na', renderer;
 const connection = createLocalModelConnection();
 const readouts = new Readouts();
@@ -39,6 +40,7 @@ function accept(payload) {
 }
 readouts.bind({ id: 'numeric-panel', observables: ['voltage','sodiumActivation','sodiumAvailability','potassiumActivation'], present: observations => {
   $('voltage').textContent = observations.voltage.value.toFixed(2).replace('-', '−');
+  $('model-voltage').textContent = `${observations.voltage.value.toFixed(2)} mV`;
   $('time').textContent = observations.voltage.time.toFixed(2);
   $('gate-m').textContent = observations.sodiumActivation.value.toFixed(3);
   $('gate-h').textContent = observations.sodiumAvailability.value.toFixed(3);
@@ -109,10 +111,24 @@ function setView(next) {
     button.classList.toggle('active', button.dataset.view === next);
     button.setAttribute('aria-pressed', String(button.dataset.view === next));
   });
-  $('channel-switch').hidden = next !== 'channel';
+  $('channel-switch').hidden = representation !== 'anatomy' || next !== 'channel';
   renderer?.setView(next, selectedChannel);
   describeView();
 }
+function setRepresentation(next) {
+  representation = next;
+  document.querySelectorAll('[data-representation]').forEach(button => {
+    button.classList.toggle('active', button.dataset.representation === next);
+    button.setAttribute('aria-pressed', String(button.dataset.representation === next));
+  });
+  $('anatomy-scales').hidden = next !== 'anatomy';
+  $('model-summary').hidden = next !== 'model';
+  $('scene-kind').textContent = next === 'model' ? 'MODEL DIAGRAM · 3D' : 'BIOLOGICAL REFERENCES · 3D';
+  $('channel-switch').hidden = next !== 'anatomy' || view !== 'channel';
+  renderer?.setRepresentation(next);
+  describeView();
+}
+document.querySelectorAll('[data-representation]').forEach(button => button.addEventListener('click', () => setRepresentation(button.dataset.representation)));
 document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => setView(button.dataset.view)));
 document.querySelectorAll('[data-channel]').forEach(button => button.addEventListener('click', () => {
   selectedChannel = button.dataset.channel;
@@ -167,7 +183,8 @@ try {
   } });
   Promise.resolve(renderer.ready).then(() => { describeView(); if (observations) renderer.update(observations); }).catch(errorMessage);
 } catch (error) { errorMessage(error); }
-window.addEventListener('resize', drawPlots);
+window.addEventListener('resize', () => { renderer?.resize(); drawPlots(); });
+$('active-model').textContent = experiment.model.label;
 sliderLabels();
 perform(async () => {
   const payload = await request('state');

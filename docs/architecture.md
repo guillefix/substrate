@@ -63,7 +63,7 @@ A uniform streaming observation interface is a future extraction if needed.
 
 ## Multiscale representations
 
-### Planned separation: system, model, and representation
+### System, model, and representation
 
 The system is the subject being studied. A model is an explicit approximation
 of that subject, with its own variables, geometry/topology, equations and
@@ -71,7 +71,11 @@ assumptions. Selecting a different model does not change the identity of the
 subject. Each run owns a model-specific state; this is distinct from the
 physical system's underlying state, which need not be fully known.
 
-The current `System` class combines subject and single-model snapshot. It is a
+The immutable HH model description now has its own identity, assumptions, state
+variable names and model-representation descriptor. The anatomy/model toggle
+selects presentation without changing the model or its observations.
+
+The current `System` class still combines subject and single-model snapshot. It is a
 prototype shortcut, not the intended multi-model contract. Separate these roles
 when introducing model instances and runs.
 
@@ -81,7 +85,7 @@ colors and plots). A model diagram is not inherently a sensor: it can expose
 model structure without measuring a dynamic quantity. Sensors supply
 observations that can be layered onto either representation.
 
-Provide independent anatomy/model-view and model-selection controls. Toggling
+The anatomy/model-view control is implemented; model selection is future work. Toggling
 representation never changes the active model. A single-compartment model can
 be shown as one compartment or equivalent circuit; a cable model as connected
 segments; a branched model as its compartment graph. The anatomy view remains
