@@ -4,7 +4,8 @@ An early scientific and artistic experience engine. Its first application is a
 neuron workbench: inspect one experiment through cell, membrane, channel, and
 signal views while preserving the same underlying state.
 
-The project is intentionally local. It is not published or connected to GitHub.
+The workbench runs locally. Source code is available at
+[guillefix/substrate](https://github.com/guillefix/substrate).
 The engine is an initial working foundation, not a general-purpose game engine
 or a validated digital twin of a real neuron.
 
